@@ -69,6 +69,11 @@ $app->post('/MyApi/public/createuser', function (Request $request, Response $res
     }
 });
 
+/**
+ * endpoint: userlogin
+ * params: email, password
+ * method: POST
+ */
 $app->post('/MyApi/public/userlogin', function (Request $request, Response $response) {
     if (!haveEmptyParams(array('email', 'password'), $request, $response)) {
         $request_data = $request->getParsedBody();
@@ -91,8 +96,8 @@ $app->post('/MyApi/public/userlogin', function (Request $request, Response $resp
             $response->getBody()->write(json_encode($response_details));
 
             return $response
-            ->withHeader('Content-type', 'application/json')
-            ->withStatus(200);
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(200);
         } else if ($result == USER_NOT_FOUND) {
 
             $response_details = array();
@@ -102,9 +107,8 @@ $app->post('/MyApi/public/userlogin', function (Request $request, Response $resp
             $response->getBody()->write(json_encode($response_details));
 
             return $response
-            ->withHeader('Content-type', 'application/json')
-            ->withStatus(404);
-
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(404);
         } else if ($result == USER_PASSWORD_DO_NOT_MATCH) {
 
             $response_details = array();
@@ -114,8 +118,8 @@ $app->post('/MyApi/public/userlogin', function (Request $request, Response $resp
             $response->getBody()->write(json_encode($response_details));
 
             return $response
-            ->withHeader('Content-type', 'application/json')
-            ->withStatus(404);
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(404);
         }
     } else {
         return $response
@@ -123,6 +127,29 @@ $app->post('/MyApi/public/userlogin', function (Request $request, Response $resp
             ->withStatus(422);
     }
 });
+
+/**
+ * endpoint: allusers
+ * params: none
+ * method: GET
+ */
+$app->get('/MyApi/public/allusers', function (Request $request, Response $response) {
+    $db = new DBOperations;
+
+    $users = $db->getAllUsers();
+
+    $response_details = array();
+    $response_details['error'] = false;
+    $response_details['users'] = $users;
+
+    $response->getBody()->write(json_encode($response_details));
+
+    return $response
+        ->withHeader('Content-type', 'application/json')
+        ->withStatus(200);
+});
+
+
 function haveEmptyParams($params, $request, $response)
 {
     $error = false;

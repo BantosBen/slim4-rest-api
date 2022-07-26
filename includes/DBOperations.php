@@ -74,4 +74,23 @@ class DBOperations
         $user['id'] = $id;
         return $user;
     }
+
+    public function getAllUsers()
+    {
+        $stmt = $this->connection->prepare("SELECT `id`, `email`, `name`, `school` FROM `users`");
+        $stmt->execute();
+        $stmt->bind_result($id, $email, $name, $school);
+        $users = array();
+        while ($stmt->fetch()) {
+            $user = array();
+            $user['name'] = $name;
+            $user['email'] = $email;
+            $user['school'] = $school;
+            $user['id'] = $id;
+
+            array_push($users, $user);
+        }
+
+        return $users;
+    }
 }
