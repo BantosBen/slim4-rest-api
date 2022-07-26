@@ -17,6 +17,7 @@ $middleware = $app->addErrorMiddleware(true, true, true);
  * method: POST
  */
 $app->post('/MyApi/public/createuser', function (Request $request, Response $response) {
+
     if (!haveEmptyParams(array('email', 'password', 'name', 'school'), $request, $response)) {
         $request_data = $request->getParsedBody();
         $email = $request_data['email'];
@@ -61,13 +62,67 @@ $app->post('/MyApi/public/createuser', function (Request $request, Response $res
                 ->withHeader('Content-type', 'application/json')
                 ->withStatus(422);
         }
-    }else{
+    } else {
         return $response
-        ->withHeader('Content-type', 'application/json')
-        ->withStatus(422);  
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(422);
     }
 });
 
+$app->post('/MyApi/public/userlogin', function (Request $request, Response $response) {
+    if (!haveEmptyParams(array('email', 'password'), $request, $response)) {
+        $request_data = $request->getParsedBody();
+
+        $email = $request_data['email'];
+        $password = $request_data['password'];
+
+        $db = new DBOperations;
+
+        $result = $db->userLogin($email, $password);
+
+        if ($result == USER_AUTHENTICATED) {
+            $user = $db->getUserByEmail($email);
+
+            $response_details = array();
+            $response_details['error'] = false;
+            $response_details['message'] = 'Login Successful';
+            $response_details['user'] = $user;
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(200);
+        } else if ($result == USER_NOT_FOUND) {
+
+            $response_details = array();
+            $response_details['error'] = true;
+            $response_details['message'] = 'User do not exists';
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(404);
+
+        } else if ($result == USER_PASSWORD_DO_NOT_MATCH) {
+
+            $response_details = array();
+            $response_details['error'] = true;
+            $response_details['message'] = 'Wrong Password';
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(404);
+        }
+    } else {
+        return $response
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(422);
+    }
+});
 function haveEmptyParams($params, $request, $response)
 {
     $error = false;
