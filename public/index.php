@@ -9,6 +9,7 @@ require '../includes/DBOperations.php';
 
 $app = AppFactory::create();
 
+$app->addBodyParsingMiddleware();
 $middleware = $app->addErrorMiddleware(true, true, true);
 
 /**
@@ -147,6 +148,111 @@ $app->get('/MyApi/public/allusers', function (Request $request, Response $respon
     return $response
         ->withHeader('Content-type', 'application/json')
         ->withStatus(200);
+});
+
+/**
+ * endpoint: updateuser
+ * params: email, name, school
+ * args: id
+ * method: PUT
+ */
+$app->put('/MyApi/public/updateuser/{id}', function (Request $request, Response $response, array $args) {
+    $id = $args['id'];
+
+    if (!haveEmptyParams(array('email', 'school', 'name'), $request, $response)) {
+
+        $request_data = $request->getParsedBody();
+
+        $email = $request_data['email'];
+        $name = $request_data['name'];
+        $school = $request_data['school'];
+
+        $db = new DBOperations;
+
+        if ($db->updateUser($name, $email, $school, $id)) {
+            $user = $db->getUserByEmail($email);
+
+            $response_details = array();
+            $response_details['error'] = false;
+            $response_details['message'] = 'Updated Successful';
+            $response_details['user'] = $user;
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(200);
+        } else {
+            $response_details['error'] = true;
+            $response_details['message'] = 'Updated Failed';
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(422);
+        }
+    } else {
+        return $response
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(422);
+    }
+});
+
+/**
+ * endpoint: updatepassword
+ * params: password
+ * method: PUT
+ */
+$app->put('/MyApi/public/updatepassword', function (Request $request, Response $response) {
+
+    if (!haveEmptyParams(array('new_password', 'current_password', 'email'), $request, $response)) {
+
+        $request_data = $request->getParsedBody();
+
+        $newPassword = $request_data['new_password'];
+        $email = $request_data['email'];
+        $currentPassword = $request_data['current_password'];
+
+
+        $db = new DBOperations;
+        $result = $db->updateUserPassword($newPassword, $currentPassword, $email);
+
+        if ($result == PASSWORD_CHANGED) {
+
+            $response_details = array();
+            $response_details['error'] = false;
+            $response_details['message'] = 'Password Updated Successful';
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(200);
+        } else if ($result == PASSWORD_NOT_CHANGED) {
+            $response_details['error'] = true;
+            $response_details['message'] = 'Password Updated Failed';
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(422);
+        } else if ($result == PASSWORD_DO_NOT_MATCH) {
+            $response_details['error'] = true;
+            $response_details['message'] = 'Password do not match';
+
+            $response->getBody()->write(json_encode($response_details));
+
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withStatus(422);
+        }
+    } else {
+        return $response
+            ->withHeader('Content-type', 'application/json')
+            ->withStatus(422);
+    }
 });
 
 

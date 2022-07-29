@@ -93,4 +93,32 @@ class DBOperations
 
         return $users;
     }
+
+    public function updateUser($name, $email, $school, $id)
+    {
+        $stmt = $this->connection->prepare("UPDATE `users` SET `name`=?, `email`=?, `school`=? WHERE `id`=?");
+        $stmt->bind_param("sssi", $name, $email, $school, $id);
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function updateUserPassword($newPassword, $currentPassword, $email)
+    {
+        $hashed_currentPassword = $this->getUserPasswordByEmail($email);
+
+        if (password_verify($currentPassword, $hashed_currentPassword)) {
+            $hashed_newPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+            $stmt = $this->connection->prepare("UPDATE `users` SET `password`=? WHERE `email`=?");
+            $stmt->bind_param("ss", $hashed_newPassword, $email);
+            if ($stmt->execute()) {
+                return PASSWORD_CHANGED;
+            }
+            return PASSWORD_NOT_CHANGED;
+        }else{
+            return PASSWORD_DO_NOT_MATCH;
+        }
+    }
 }
